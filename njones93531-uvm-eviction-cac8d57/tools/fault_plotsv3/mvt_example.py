@@ -1,0 +1,45 @@
+import os
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from math import pi
+import heapq
+from itertools import combinations
+from scipy.stats import chi2_contingency, gmean
+import argparse
+import socket
+
+# Define the path to the main directory
+perf_data_base_dir = '../../benchmarks/strategied'
+hostname=socket.gethostname()
+
+def parse_perf_df():
+    bmark = 'MVT'
+    print("Parsing performance files")
+    lc = bmark.lower()
+    bench=f'{perf_data_base_dir}/{bmark}/{lc}_numa_pref.csv'
+    data_df = pd.read_csv(bench)
+    data_df['app'] = bmark
+    data_df = data_df.drop(columns=['Iteration'])
+    
+    #If multiple data, take the average
+    data_df['Kernel Time'] = data_df.groupby('Problem Size')['Kernel Time'].transform('mean')
+    data_df = data_df.drop_duplicates(subset=['Problem Size'])
+    data_df = data_df.sort_values('Problem Size')
+
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(data_df['Problem Size'], data_df['Kernel Time'])
+    # Plot
+    textsize = 24
+    plt.rcParams.update({'font.size': textsize})
+    
+    plt.xlabel('Problem Size')
+    plt.ylabel('Kernel Time')
+    plt.grid(True)
+    plt.tight_layout()
+    os.makedirs(f"../../figs/{hostname}/oversub/", exist_ok=True)
+    plt.savefig(f'../../figs/{hostname}/oversub/strategied_x86_64-555.42.02_faults-new_mvt.png')
+    plt.close()
+
+parse_perf_df()
